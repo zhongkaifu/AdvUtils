@@ -35,13 +35,15 @@ namespace AdvUtils
     {
         protected List<VQCluster> vqClusters;
         protected double[] codebook;
-        protected List<double> dataSet;
+        protected VarBigArray<double> dataSet;
+        protected int dataSetSize;
 
         public double[] CodeBook { get { return codebook; } }
 
         public VectorQuantization()
         {
-            dataSet = new List<double>();
+            dataSet = new VarBigArray<double>(1024 * 1024);
+            dataSetSize = 0;
         }
 
         /// <summary>
@@ -50,7 +52,10 @@ namespace AdvUtils
         /// <param name="values"></param>
         public void Add(double[] values)
         {
-            dataSet.AddRange(values);
+            foreach (double value in values)
+            {
+                Add(value);
+            }
         }
 
         /// <summary>
@@ -59,7 +64,8 @@ namespace AdvUtils
         /// <param name="value"></param>
         public void Add(double value)
         {
-            dataSet.Add(value);
+            dataSet[dataSetSize] = value;
+            dataSetSize++;
         }
 
         public int ComputeVQ(double value)
@@ -74,21 +80,21 @@ namespace AdvUtils
         /// <returns></returns>
         public double BuildCodebook(int vqSize)
         {
-            if (vqSize > dataSet.Count)
+            if (vqSize > dataSetSize)
             {
                 Logger.WriteLine(Logger.Level.err, "VQ size should not be greater than data size.");
                 return -1;
             }
 
-            Logger.WriteLine("Sorting data set (size: {0})...", dataSet.Count);
-            dataSet.Sort();
+            Logger.WriteLine("Sorting data set (size: {0})...", dataSetSize);
+            dataSet.Sort(0, dataSetSize);
 
-            Logger.WriteLine("min={0}, max={1}", dataSet[0], dataSet[dataSet.Count - 1]);
+            Logger.WriteLine("min={0}, max={1}", dataSet[0], dataSet[dataSetSize - 1]);
 
             //Set entire data as a single cluster, and then split it
             double mean, var;
-            ComputeVariables(0, dataSet.Count - 1, out mean, out var);
-            VQCluster c = new VQCluster(mean, var, 0, dataSet.Count - 1);
+            ComputeVariables(0, dataSetSize - 1, out mean, out var);
+            VQCluster c = new VQCluster(mean, var, 0, dataSetSize - 1);
             vqClusters = new List<VQCluster>();
             vqClusters.Add(c);
 
@@ -120,7 +126,7 @@ namespace AdvUtils
                 }
             }
 
-            distortion = Math.Sqrt(distortion / dataSet.Count);
+            distortion = Math.Sqrt(distortion / dataSetSize);
             return distortion;
         }
 
