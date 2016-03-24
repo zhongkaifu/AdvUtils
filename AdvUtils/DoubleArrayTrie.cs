@@ -47,26 +47,53 @@ namespace AdvUtils
         private sunit_t[] array;
 #endif
 
-        public void Load(String fileName)
+        /// <summary>
+        /// Loads ArrayTrie from file
+        /// </summary>
+        /// <param name="fileName">path to file</param>
+        /// <param name="numberOfElementsInChunk">number of elements (2 int32) in read buffer. Default is 2048 (16K buffer size)</param>
+        public void Load(string fileName, int numberOfElementsInChunk = 2048)
         {
-            StreamReader sr = new StreamReader(fileName);
-            BinaryReader br = new BinaryReader(sr.BaseStream);
-            FileInfo fi = new FileInfo(fileName);
-
-            int i = 0;
+            var fi = new FileInfo(fileName);
+            const int int32Size = sizeof(int);
+            const int elementSize = int32Size * 2;
+            var fileSizeInBytes = fi.Length;
+            var numberOfElements = fileSizeInBytes / elementSize;
 #if NO_SUPPORT_VERY_BIG_OBJECT
-            array = new VarBigArray<sunit_t>(fi.Length / 8);
+            array = new VarBigArray<sunit_t>(numberOfElements);
 #else
-            array = new sunit_t[fi.Length / 8];
+            array = new sunit_t[numberOfElements];
 #endif
-            for (i = 0; i < array.LongLength; i++)
+            using (var sr = new StreamReader(fileName))
+            using (var br = new BinaryReader(sr.BaseStream))
             {
-                int base1 = br.ReadInt32();
-                int check = br.ReadInt32();
-                array[i] = new sunit_t(base1, check);
+                var buffersize = elementSize * numberOfElementsInChunk;
+                var buffer = new byte[elementSize * numberOfElementsInChunk];
+                var index = 0;
+                for (long j = 0; j <= numberOfElements / numberOfElementsInChunk; j++)
+                {
+                    var numberOfReadBytes = br.Read(buffer, 0, buffersize);
+                    if (numberOfReadBytes == buffersize)
+                    {
+                        for (int i = 0; i < numberOfElementsInChunk; i++, index++)
+                        {
+                            var base1 = BitConverter.ToInt32(buffer, elementSize * i);
+                            var check = BitConverter.ToInt32(buffer, (elementSize * i) + int32Size);
+                            array[index] = new sunit_t(base1, check);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < numberOfReadBytes / elementSize; i++)
+                        {
+                            var base1 = BitConverter.ToInt32(buffer, elementSize * i);
+                            var check = BitConverter.ToInt32(buffer, (elementSize * i) + int32Size);
+                            array[index++] = new sunit_t(base1, check);
+                        }
+                        break;
+                    }
+                }
             }
-
-            br.Close();
         }
 
         //Match indexed key which is perfect matched with given string
@@ -74,9 +101,10 @@ namespace AdvUtils
         {
             int b = array[0].base1;
             int p;
-            foreach (char ch in key)
+            for (int index = 0; index < key.Length; index++)
             {
-                p = b + (int)ch + 1;
+                char ch = key[index];
+                p = b + ch + 1;
                 if (p >= array.Length)
                 {
                     return -1;
@@ -105,7 +133,9 @@ namespace AdvUtils
             return -1;
         }
 
-        //Match all indexed keys which is prefix of the given string.
+        /// <summary>
+        /// Match all indexed keys which is prefix of the given string.
+        /// </summary>
         public int SearchAsKeyPrefix(string key, List<int> result)
         {
             int len = key.Length;
@@ -160,15 +190,18 @@ namespace AdvUtils
         }
 
 
-        //Search keys by their prefix string
+        /// <summary>
+        /// Search keys by their prefix string
+        /// </summary>
         public int SearchByPrefix(string strKeyPrefx, List<int> result)
         {
             int b = array[0].base1;
             int p;
 
             result.Clear();
-            foreach (char ch in strKeyPrefx)
+            for (int index = 0; index < strKeyPrefx.Length; index++)
             {
+                var ch = strKeyPrefx[index];
                 p = b + (int)ch + 1;
                 if (p >= array.Length)
                 {
@@ -273,7 +306,7 @@ namespace AdvUtils
             int prev = 0;
 
             int i = parent.left;
-            for (int j = parent.left;j < parent.right;j++)
+            for (int j = parent.left; j < parent.right; j++)
             {
                 string key = key_[j];
                 if (key.Length < parent.depth)
@@ -316,7 +349,7 @@ namespace AdvUtils
             {
                 Interlocked.Increment(ref next_chk_pos_);
             }
-            
+
             int pos = next_chk_pos_;
             int startpos = pos;
 
@@ -468,7 +501,7 @@ namespace AdvUtils
             }
 #if NO_SUPPORT_PARALLEL_LIB
 #else
-            );
+);
 #endif
 
             return begin;
@@ -546,7 +579,7 @@ namespace AdvUtils
             return true;
         }
 
-        public void save(String file)
+        public void save(string file)
         {
             StreamWriter sw = new StreamWriter(file);
             BinaryWriter bw = new BinaryWriter(sw.BaseStream);
