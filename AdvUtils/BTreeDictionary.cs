@@ -1301,7 +1301,7 @@ namespace AdvUtils
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
         {
             TValue value;
-            return this.TryGetValue(item.Key, out value) && Object.Equals(item.Value, value);
+            return this.TryGetValue(item.Key, out value) && object.Equals(item.Value, value);
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
