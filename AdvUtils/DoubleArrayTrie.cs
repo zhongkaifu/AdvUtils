@@ -54,17 +54,31 @@ namespace AdvUtils
         /// <param name="numberOfElementsInChunk">number of elements (2 int32) in read buffer. Default is 2048 (16K buffer size)</param>
         public void Load(string fileName, int numberOfElementsInChunk = 2048)
         {
-            var fi = new FileInfo(fileName);
+            if(!File.Exists(fileName))
+                throw new FileNotFoundException(
+                    "Please check that the specified file exists", fileName);
+            using (var stream = File.OpenRead(fileName))
+                Load(stream, numberOfElementsInChunk);
+
+        }
+
+        /// <summary>
+        /// Loads ArrayTrie from file
+        /// </summary>
+        /// <param name="fileName">path to file</param>
+        /// <param name="numberOfElementsInChunk">number of elements (2 int32) in read buffer. Default is 2048 (16K buffer size)</param>
+        public void Load(Stream sourceStream, int numberOfElementsInChunk = 2048)
+        {
             const int int32Size = sizeof(int);
             const int elementSize = int32Size * 2;
-            var fileSizeInBytes = fi.Length;
+            var fileSizeInBytes = sourceStream.Length;
             var numberOfElements = fileSizeInBytes / elementSize;
 #if NO_SUPPORT_VERY_BIG_OBJECT
             array = new VarBigArray<sunit_t>(numberOfElements);
 #else
             array = new sunit_t[numberOfElements];
 #endif
-            using (var sr = new StreamReader(fileName))
+            using (var sr = new StreamReader(sourceStream))
             using (var br = new BinaryReader(sr.BaseStream))
             {
                 var buffersize = elementSize * numberOfElementsInChunk;
