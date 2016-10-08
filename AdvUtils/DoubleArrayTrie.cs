@@ -51,7 +51,10 @@ namespace AdvUtils
         /// Loads ArrayTrie from file
         /// </summary>
         /// <param name="fileName">path to file</param>
-        /// <param name="numberOfElementsInChunk">number of elements (2 int32) in read buffer. Default is 2048 (16K buffer size)</param>
+        /// <param name="numberOfElementsInChunk">
+        /// Number of elements (2 int32) in read buffer.
+        /// Default is 2048 (16K buffer size)
+        /// </param>
         public void Load(string fileName, int numberOfElementsInChunk = 2048)
         {
             if(!File.Exists(fileName))
@@ -59,14 +62,19 @@ namespace AdvUtils
                     "Please check that the specified file exists", fileName);
             using (var stream = File.OpenRead(fileName))
                 Load(stream, numberOfElementsInChunk);
-
         }
 
         /// <summary>
-        /// Loads ArrayTrie from file
+        /// Loads ArrayTrie from an arbitrary <see cref="Stream"/>.
+        /// <paramref name="sourceStream"/> is closed and
+        /// disposed once this method completes.
         /// </summary>
-        /// <param name="fileName">path to file</param>
-        /// <param name="numberOfElementsInChunk">number of elements (2 int32) in read buffer. Default is 2048 (16K buffer size)</param>
+        /// <param name="sourceStream">
+        /// A <see cref="Stream"/> containing the model.
+        /// </param>
+        /// <param name="numberOfElementsInChunk">
+        /// Number of elements (2 int32) in read buffer. 
+        /// Default is 2048 (16K buffer size)</param>
         public void Load(Stream sourceStream, int numberOfElementsInChunk = 2048)
         {
             const int int32Size = sizeof(int);
