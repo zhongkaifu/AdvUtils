@@ -37,6 +37,32 @@ namespace AdvUtils
 
         }
 
+        public static void WriteLine(Level level, ConsoleColor color, string s, params object[] args)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("{0},{1} ", level.ToString(), DateTime.Now.ToString());
+
+            if (args.Length == 0)
+                sb.Append(s);
+            else
+                sb.AppendFormat(s, args);
+
+            string sLine = sb.ToString();
+
+            Console.ForegroundColor = color;
+
+            if (level != Level.info)
+                Console.Error.WriteLine(sLine);
+            else
+                Console.WriteLine(sLine);
+
+            Console.ResetColor();
+
+            if (s_sw != null)
+                s_sw.WriteLine(sLine);
+
+        }
+
         public static void Close()
         {
             if (s_sw != null)
